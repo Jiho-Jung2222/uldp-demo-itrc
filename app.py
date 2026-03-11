@@ -137,7 +137,7 @@ if page == "1. 기술 개념 소개":
         c1, c2, c3 = st.columns(3)
         with c1:
             st.image(img, caption="[원본] 프라이버시 보호 전", use_container_width=True)
-            st.info("보호가 전혀 적용되지 아주 귀여운 아기 고양이입니다.")
+            st.info("보호가 전혀 적용되지 않은 아주 귀여운 아기 고양이입니다.")
         with c2:
             st.image(ldp_img, caption="[1세대 기술] LDP: 전체 강한 모자이크", use_container_width=True)
             st.error("🚨 배경은 숨겼지만, 분석 대상인 귀여운 아기 고양이까지 완전히 뭉개졌습니다.")
@@ -369,4 +369,3 @@ with col_prev:
 with col_next:
     if current_idx < len(pages) - 1:
         st.button("다음 페이지 ▶", type="primary", on_click=go_next, use_container_width=True)
-
