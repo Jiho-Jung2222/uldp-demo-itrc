@@ -115,40 +115,40 @@ if page == "1. 기술 개념 소개":
     if os.path.exists(image_path):
         img = Image.open(image_path)
         w, h = img.size
-        mosaic_ratio = 25
         
-        ldp_img = img.resize((w // mosaic_ratio, h // mosaic_ratio), Image.NEAREST).resize((w, h), Image.NEAREST)
+        # 모자이크 강도 설정 (배경용 강한 모자이크, 객체용 약한 모자이크)
+        mosaic_ratio_strong = 25
+        mosaic_ratio_weak = 6
         
+        # 1. LDP (전체 강한 모자이크)
+        ldp_img = img.resize((w // mosaic_ratio_strong, h // mosaic_ratio_strong), Image.NEAREST).resize((w, h), Image.NEAREST)
+        
+        # 2. ULDP (배경은 강하게, 고양이는 약하게)
         box = (int(w * 0.25), int(h * 0.15), int(w * 0.75), int(h * 0.85))
         uldp_img = ldp_img.copy()
-        clear_cat = img.crop(box)
-        uldp_img.paste(clear_cat, box)
         
-        c1, c2 = st.columns(2)
+        # 고양이 부분만 잘라내어 약한 모자이크 적용
+        cat_crop = img.crop(box)
+        cw, ch = cat_crop.size
+        weak_blurred_cat = cat_crop.resize((cw // mosaic_ratio_weak, ch // mosaic_ratio_weak), Image.NEAREST).resize((cw, ch), Image.NEAREST)
+        uldp_img.paste(weak_blurred_cat, box)
+        
+        # 3열(Column)로 나누어 배치
+        c1, c2, c3 = st.columns(3)
         with c1:
-            st.image(ldp_img, caption="[1세대 기술] LDP: 사진 전체에 일괄 모자이크 적용", use_container_width=True)
-            st.error("🚨 사진이 찍힌 장소(배경)는 잘 숨겼지만, 정작 분석해야 할 고양이의 형태까지 완전히 뭉개져 버렸습니다.")
+            st.image(img, caption="[원본] 프라이버시 보호 전", use_container_width=True)
+            st.info("보호가 전혀 적용되지 않은 원래의 데이터입니다.")
         with c2:
-            st.image(uldp_img, caption="[차세대 기술] ULDP: 민감한 배경은 모자이크, 고양이는 보존", use_container_width=True)
-            st.success("✅ 민감한 정보인 배경은 완벽히 가리면서도, 고양이는 선명하게 유지되어 데이터의 가치가 살아있습니다.")
+            st.image(ldp_img, caption="[1세대 기술] LDP: 전체 강한 모자이크", use_container_width=True)
+            st.error("🚨 배경은 숨겼지만, 분석 대상인 고양이까지 완전히 뭉개졌습니다.")
+        with c3:
+            st.image(uldp_img, caption="[차세대 기술] ULDP: 맞춤형 모자이크", use_container_width=True)
+            st.success("✅ 배경은 완벽히 가리면서도, 고양이는 약한 노이즈만 주어 가치를 살렸습니다.")
     else:
         st.info("시각적 예시 이미지를 준비 중입니다. (image_6c64d4.jpg 파일을 추가해 주세요)")
 
 # ==========================================
-# 페이지 2: 연구 성과 및 제안 기법
-# ==========================================
-elif page == "2. 연구 성과 및 작동 원리":
-    st.title("우리의 제안: 집단별 맞춤형 보호 기법")
-    st.markdown("차세대 기술인 ULDP에도 한 가지 아쉬운 점이 있었습니다. 사람마다 숨기고 싶은 정보의 기준이 다르다는 점을 고려하지 못한 것인데요. 저희 연구팀은 사용자의 특성에 맞춰 프라이버시 보호 범위를 유연하게 조절하는 맞춤형 기술을 제안합니다.")
-    
-    st.divider()
-
-    st.subheader("🤔 기존 ULDP와 우리 기술의 차이점")
-    st.markdown("가장 큰 차이는 사람마다 다른 고민거리를 어떻게 다루느냐에 있습니다.")
-    st.write("")
-
-    col_old, col_new = st.columns(2)
-    with col_old:
+# 페이지 2: 연구 성과 및 작동 원리
         with st.container(border=True):
             st.markdown("<h4 style='text-align: center; color: #e03131;'>기존 ULDP: 획일적 보호</h4>", unsafe_allow_html=True)
             st.markdown("모든 사람의 걱정거리를 하나로 묶어서 똑같이 보호합니다. 예를 들어 A가 '직업'을, B가 '병력'을 숨기고 싶어 한다면, 기존 기술은 모든 사람의 직업과 병력을 다 같이 가려버립니다. 불필요한 정보까지 너무 많이 가려져 통계의 정확도가 떨어집니다.")
@@ -356,5 +356,3 @@ with col_prev:
 with col_next:
     if current_idx < len(pages) - 1:
         st.button("다음 페이지 ▶", type="primary", on_click=go_next, use_container_width=True)
-
-
