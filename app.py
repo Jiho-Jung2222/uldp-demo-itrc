@@ -9,15 +9,59 @@ from ubd_core import optimize_M, encode_opt_ULDP, decode_opt_ULDP, compute_M_J
 # 모바일 및 PC 환경 모두에 최적화된 레이아웃 설정
 st.set_page_config(page_title="프라이버시 기술 전시", layout="wide", initial_sidebar_state="expanded")
 
-# 사이드바 네비게이션 구성
+# ==========================================
+# 페이지 이동을 위한 상태 관리 (세션 스테이트)
+# ==========================================
+pages = ["1. 기술 개념 소개", "2. 연구 성과 및 작동 원리", "3. 알고리즘 라이브 데모"]
+
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = pages[0]
+
+def go_next():
+    current_idx = pages.index(st.session_state.current_page)
+    if current_idx < len(pages) - 1:
+        st.session_state.current_page = pages[current_idx + 1]
+
+def go_prev():
+    current_idx = pages.index(st.session_state.current_page)
+    if current_idx > 0:
+        st.session_state.current_page = pages[current_idx - 1]
+
+# 사이드바 네비게이션 구성 (세션 스테이트와 연동)
 st.sidebar.title("📌 전시 메뉴")
 page = st.sidebar.radio(
     "관람하실 페이지를 선택해 주세요:",
-    ["1. 기술 개념 소개", "2. 연구 성과 및 작동 원리", "3. 알고리즘 라이브 데모"]
+    pages,
+    key="current_page"
 )
 
 st.sidebar.divider()
 st.sidebar.info("💡 관람 팁\n\n왼쪽 메뉴를 위에서부터 순서대로 둘러보시면 기술의 원리를 아주 쉽게 이해하실 수 있습니다.")
+
+# ==========================================
+# 연산 속도 최적화를 위한 강력한 메모리 캐싱
+# ==========================================
+@st.cache_data(show_spinner=False)
+def get_optimal_params_cached(w, v, eps):
+    return optimize_M(w, v, eps)
+
+@st.cache_data(show_spinner=False)
+def compute_m_val_cached(alpha, t, w, v, eps):
+    m_val, _, _, _ = compute_M_J(alpha, t, w, v, eps)
+    return m_val / 10000
+
+@st.cache_data(show_spinner=False)
+def get_full_chart_data(w, v_base, v_target):
+    eps_range = np.round(np.arange(0.5, 3.1, 0.1), 1)
+    mse_base = []
+    mse_prop = []
+    for e in eps_range:
+        a_b, t_b = get_optimal_params_cached(w, v_base, e)
+        mse_base.append(compute_m_val_cached(a_b, t_b, w, v_base, e))
+        
+        a_p, t_p = get_optimal_params_cached(w, v_target, e)
+        mse_prop.append(compute_m_val_cached(a_p, t_p, w, v_target, e))
+    return eps_range, mse_base, mse_prop
 
 # ==========================================
 # 페이지 1: LDP와 ULDP의 개념 설명
@@ -28,7 +72,6 @@ if page == "1. 기술 개념 소개":
     
     st.divider()
     
-    # 약자 및 개념 설명
     col_l, col_u = st.columns(2)
     with col_l:
         with st.container(border=True):
@@ -44,7 +87,6 @@ if page == "1. 기술 개념 소개":
 
     st.write("")
     
-    # 표(Table) 형태로 일상생활 예시 구성
     st.markdown("### 💡 일상생활 속 프라이버시 기술 비교")
     st.markdown("""
     | 활용 분야 | ❌ 1세대 기술 (LDP) 적용 시 문제점 | 🌟 차세대 기술 (ULDP) 적용 시 장점 |
@@ -59,17 +101,14 @@ if page == "1. 기술 개념 소개":
     st.markdown("위에서 설명한 두 기술의 차이를 한 장의 사진으로 직관적으로 비교해 보겠습니다.")
     st.write("")
     
-    # 고양이 이미지 예시
     image_path = "image_6c64d4.jpg"
     if os.path.exists(image_path):
         img = Image.open(image_path)
         w, h = img.size
         mosaic_ratio = 25
         
-        # LDP
         ldp_img = img.resize((w // mosaic_ratio, h // mosaic_ratio), Image.NEAREST).resize((w, h), Image.NEAREST)
         
-        # ULDP
         box = (int(w * 0.25), int(h * 0.15), int(w * 0.75), int(h * 0.85))
         uldp_img = ldp_img.copy()
         clear_cat = img.crop(box)
@@ -166,7 +205,7 @@ elif page == "2. 연구 성과 및 작동 원리":
 # ==========================================
 elif page == "3. 알고리즘 라이브 데모":
     st.title("맞춤형 프라이버시 라이브 시뮬레이션")
-    st.markdown("이 페이지에서는 앞서 설명한 수학 알고리즘을 직접 구동하여, 맞춤형 프라이버시 보호 기술의 성능을 실시간으로 검증해 볼 수 있습니다.")
+    st.markdown("이 페이지에서는 앞서 설명한 수학 알고리즘을 직접 구동하여, 맞춤형 프라이버시 보호 기술의 성능을 즉각적으로 확인해 볼 수 있습니다.")
     
     st.info("💡 무엇을 알아내고자 하는 시뮬레이션인가요?\n\n이 시뮬레이션의 목표는 수만 명의 사람들이 각각 어떤 특성을 어느 정도의 비율로 가지고 있는지 전체적인 통계 그래프를 그려내는 것입니다. 사용자의 데이터는 스마트폰에서 조각조각 암호화되어 서버로 전송되지만, 서버는 이 암호화된 조각들을 모아 원래의 전체 통계 형태(정답지)를 최대한 가깝게 역산하여 복원해내야 합니다.")
 
@@ -194,22 +233,11 @@ elif page == "3. 알고리즘 라이브 데모":
     
     st.divider()
     
-    # ----------------------------------------------------
-    # 그래프 시각화 (로딩 스피너 추가로 반응성 개선)
-    # ----------------------------------------------------
-    @st.cache_data(show_spinner=False)
-    def get_theoretical_mse(w, v, eps):
-        alpha, t = optimize_M(w, v, eps)
-        m_val, _, _, _ = compute_M_J(alpha, t, w, v, eps)
-        return m_val / 10000 
-    
     st.subheader("📈 설정된 보호 강도에 따른 통계 오차율 변화")
     st.markdown("아래 그래프의 빨간 점선은 현재 설정하신 보호 강도의 위치를 나타냅니다.")
     
-    with st.spinner("그래프 데이터를 계산하고 있습니다. 잠시만 기다려주세요..."):
-        eps_range = np.linspace(0.5, 3.0, 50)
-        mse_base_curve = [get_theoretical_mse(W, v_base, e) for e in eps_range]
-        mse_proposed_curve = [get_theoretical_mse(W, v_target, e) for e in eps_range]
+    with st.spinner("그래프 데이터를 최초 1회 생성 중입니다. 잠시만 기다려주세요..."):
+        eps_range, mse_base_curve, mse_proposed_curve = get_full_chart_data(W, v_base, v_target)
                 
         df_chart = pd.DataFrame({
             'epsilon': eps_range,
@@ -233,27 +261,22 @@ elif page == "3. 알고리즘 라이브 데모":
 
     st.divider()
     
-    # ----------------------------------------------------
-    # 실제 알고리즘 구동 데모 및 결과 해설
-    # ----------------------------------------------------
     st.subheader("2. 실시간 알고리즘 구동 및 결과 확인")
-    st.markdown("아래 버튼을 누르시면, 현장 데모를 위해 가상의 사용자 1만 명의 데이터를 즉석에서 생성합니다. 그리고 내 스마트폰에서 노이즈 주입(보호) ➔ 서버 전송 ➔ 통계청 서버에서 전체 분포 복원으로 이어지는 전 과정을 단 몇 초 안에 수행하여 그 결과를 보여줍니다.")
+    st.markdown("아래 버튼을 누르시면, 가상의 사용자 1만 명의 데이터를 즉석에서 생성한 뒤 **[노이즈 주입(암호화) ➔ 서버 전송 ➔ 서버에서 전체 분포 복원]**의 전 과정을 순식간에 수행하여 그 결과를 보여줍니다.")
     
     if st.button("🚀 시뮬레이션 시작 (결과 확인)", type="primary"):
-        with st.spinner("가상의 데이터를 생성하고 수학적 연산을 수행하고 있습니다. 잠시만 기다려주세요..."):
+        with st.spinner("가상의 데이터를 생성하고 복원 알고리즘을 적용하고 있습니다..."):
             N = 10000
             x_ranks = np.arange(1, W + 1)
             weights = x_ranks ** (-1.2)
             true_P = weights / weights.sum()
             raw_data = np.random.choice(W, N, p=true_P)
             
-            # 기존 기법
-            alpha_b, t_b = optimize_M(W, v_base, epsilon)
+            alpha_b, t_b = get_optimal_params_cached(W, v_base, epsilon)
             Y_base = encode_opt_ULDP(raw_data, alpha_b, t_b, W, v_base, epsilon)
             P_hat_base = decode_opt_ULDP(Y_base, alpha_b, t_b, W, v_base, epsilon)
             
-            # 제안 기법
-            alpha_p, t_p = optimize_M(W, v_target, epsilon)
+            alpha_p, t_p = get_optimal_params_cached(W, v_target, epsilon)
             Y_prop = encode_opt_ULDP(raw_data, alpha_p, t_p, W, v_target, epsilon)
             P_hat_prop = decode_opt_ULDP(Y_prop, alpha_p, t_p, W, v_target, epsilon)
             
@@ -305,3 +328,23 @@ elif page == "3. 알고리즘 라이브 데모":
             st.metric("제안 기법의 통계 오차율", f"{mse_p:.6f}", f"정확도 {((mse_b-mse_p)/mse_b*100):.1f}% 향상!", delta_color="normal")
             
         st.success("🎉 시뮬레이션 결과: 위 차트를 보면 주황색 선(기존 기법)보다 파란색 선(제안 기법)이 회색 영역(원본 데이터)에 훨씬 더 가깝게 딱 붙어있는 것을 볼 수 있습니다. 즉, 우리 연구실이 개발한 맞춤형 프라이버시 기술을 적용하면 여러분의 개인정보는 똑같이 안전하게 지켜주면서도, 사회에 필요한 데이터의 정확도는 크게 끌어올릴 수 있습니다.")
+
+# ==========================================
+# 모바일 최적화: 하단 이전/다음 페이지 이동 버튼
+# ==========================================
+st.write("")
+st.write("")
+st.divider()
+
+current_idx = pages.index(page)
+col_prev, col_empty, col_next = st.columns([1, 1, 1])
+
+with col_prev:
+    if current_idx > 0:
+        st.button("◀ 이전 페이지", on_click=go_prev, use_container_width=True)
+
+with col_next:
+    if current_idx < len(pages) - 1:
+        st.button("다음 페이지 ▶", type="primary", on_click=go_next, use_container_width=True)
+
+
