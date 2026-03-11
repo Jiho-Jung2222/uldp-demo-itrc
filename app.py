@@ -137,13 +137,13 @@ if page == "1. 기술 개념 소개":
         c1, c2, c3 = st.columns(3)
         with c1:
             st.image(img, caption="[원본] 프라이버시 보호 전", use_container_width=True)
-            st.info("보호가 전혀 적용되지 않은 원래의 데이터입니다.")
+            st.info("보호가 전혀 적용되지 아주 귀여운 아기 고양이입니다.")
         with c2:
             st.image(ldp_img, caption="[1세대 기술] LDP: 전체 강한 모자이크", use_container_width=True)
-            st.error("🚨 배경은 숨겼지만, 분석 대상인 고양이까지 완전히 뭉개졌습니다.")
+            st.error("🚨 배경은 숨겼지만, 분석 대상인 귀여운 아기 고양이까지 완전히 뭉개졌습니다.")
         with c3:
             st.image(uldp_img, caption="[차세대 기술] ULDP: 맞춤형 모자이크", use_container_width=True)
-            st.success("✅ 배경은 완벽히 가리면서도, 고양이는 약한 노이즈만 주어 가치를 살렸습니다.")
+            st.success("✅ 배경은 완벽히 가리면서도, 고양이는 약한 노이즈만 주어 귀여움이 노이즈를 뚫고 나올 수 있습니다.")
     else:
         st.info("시각적 예시 이미지를 준비 중입니다. (image_6c64d4.jpg 파일을 추가해 주세요)")
 
@@ -369,3 +369,4 @@ with col_prev:
 with col_next:
     if current_idx < len(pages) - 1:
         st.button("다음 페이지 ▶", type="primary", on_click=go_next, use_container_width=True)
+
