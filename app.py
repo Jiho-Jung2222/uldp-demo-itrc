@@ -39,7 +39,7 @@ st.sidebar.divider()
 st.sidebar.info("💡 관람 팁\n\n왼쪽 메뉴를 위에서부터 순서대로 둘러보시면 기술의 원리를 아주 쉽게 이해하실 수 있습니다.")
 
 # ==========================================
-# 연산 속도 최적화를 위한 강력한 메모리 캐싱
+# 연산 속도 최적화를 위한 강력한 메모리 캐싱 및 포맷팅 헬퍼
 # ==========================================
 @st.cache_data(show_spinner=False)
 def get_optimal_params_cached(w, v, eps):
@@ -62,6 +62,16 @@ def get_full_chart_data(w, v_base, v_target):
         a_p, t_p = get_optimal_params_cached(w, v_target, e)
         mse_prop.append(compute_m_val_cached(a_p, t_p, w, v_target, e))
     return eps_range, mse_base, mse_prop
+
+# 숫자를 a.aaa x 10^n 형태의 예쁜 텍스트로 바꿔주는 함수
+def format_scientific(val):
+    if val == 0: return "0"
+    base, exp = f"{val:.3e}".split('e')
+    exp_int = int(exp)  # -05 같은 문자열을 -5로 깔끔하게 변환
+    # 위첨자 유니코드로 변환
+    superscripts = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
+    exp_str = str(exp_int).translate(superscripts)
+    return f"{base} × 10{exp_str}"
 
 # ==========================================
 # 페이지 1: LDP와 ULDP의 개념 설명
@@ -171,7 +181,7 @@ elif page == "2. 연구 성과 및 작동 원리":
     with c_track1:
         with st.container(border=True):
             st.markdown("<h3 style='text-align: center;'>🚨 민감한 데이터라면?</h3>", unsafe_allow_html=True)
-            st.markdown("사용자가 숨기고 싶어 하는 정보가 들어오면 강력한 노이즈(블록 설계 연산)를 씌웁니다. 진짜 정보가 무엇인지 서버조차 알 수 없게 철저히 암호화되어 전송됩니다.")
+            st.markdown("사용자가 숨기고 싶어 하는 정보가 들어오면 강력 노이즈(블록 설계 연산)를 씌웁니다. 진짜 정보가 무엇인지 서버조차 알 수 없게 철저히 암호화되어 전송됩니다.")
     with c_track2:
         with st.container(border=True):
             st.markdown("<h3 style='text-align: center;'>✅ 일반 데이터라면?</h3>", unsafe_allow_html=True)
@@ -323,9 +333,9 @@ elif page == "3. 알고리즘 라이브 데모":
         with col_m1:
             st.metric("현재 프라이버시 보호 강도", f"ε = {epsilon:.1f}")
         with col_m2:
-            st.metric("기존 기법의 통계 오차율", f"{mse_b:.6f}")
+            st.metric("기존 기법의 통계 오차율", format_scientific(mse_b))
         with col_m3:
-            st.metric("제안 기법의 통계 오차율", f"{mse_p:.6f}", f"정확도 {((mse_b-mse_p)/mse_b*100):.1f}% 향상!", delta_color="normal")
+            st.metric("제안 기법의 통계 오차율", format_scientific(mse_p), f"정확도 {((mse_b-mse_p)/mse_b*100):.1f}% 향상!", delta_color="normal")
             
         st.success("🎉 시뮬레이션 결과: 위 차트를 보면 주황색 선(기존 기법)보다 파란색 선(제안 기법)이 회색 영역(원본 데이터)에 훨씬 더 가깝게 딱 붙어있는 것을 볼 수 있습니다. 즉, 우리 연구실이 개발한 맞춤형 프라이버시 기술을 적용하면 여러분의 개인정보는 똑같이 안전하게 지켜주면서도, 사회에 필요한 데이터의 정확도는 크게 끌어올릴 수 있습니다.")
 
